@@ -8,7 +8,7 @@ from langchain.chat_models import ChatGroq
 from langchain.chains import RetrievalQA
 
 # === SETUP ===
-GROQ_API_KEY = "your-groq-api-key"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
+GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
 MODEL_NAME = "mixtral-8x7b"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
 
 # === Load documents from multiple file types ===
