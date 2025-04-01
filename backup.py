@@ -8,6 +8,12 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
+from langchain.prompts import PromptTemplate
+
+from langchain.chains import RetrievalQA, LLMChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.prompts import PromptTemplate
+from langchain.schema.output_parser import StrOutputParser
 
 # === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
@@ -24,7 +30,6 @@ MODEL_NAME = "llama3-70b-8192"  # หรือ "llama3-8b-8192" ที่รอ�
 def load_documents():
     all_docs = []
     folder_path = "docs"
-
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
 
@@ -40,7 +45,6 @@ def load_documents():
             continue
 
         all_docs.extend(loader.load())
-
     return all_docs
 
 # === Split documents ===
@@ -54,15 +58,45 @@ def build_vectorstore(chunks):
     vectordb = FAISS.from_documents(chunks, embedding=embeddings)
     return vectordb
 
-# === Create RAG chain ===
+# === Create QA Chain with Thai Prompt ===
 def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
-        groq_api_key=GROQ_API_KEY,
-        model_name=MODEL_NAME
+        groq_api_key="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",
+        model_name="llama3-70b-8192"
     )
-    chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectordb.as_retriever())
-    return chain
+
+    prompt_template = """
+    คุณเป็นผู้เชี่ยวชาญด้านกฎหมายของประเทศไทย กรุณาตอบคำถามต่อไปนี้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย และเหมาะสมกับประชาชนทั่วไป:
+
+    เอกสารที่เกี่ยวข้อง:
+    {context}
+
+    คำถาม: {question}
+    คำตอบ:
+    """
+
+    prompt = PromptTemplate(
+        template=prompt_template,
+        input_variables=["context", "question"]
+    )
+
+    # ✅ สร้าง LLMChain แยกก่อน
+    llm_chain = LLMChain(prompt=prompt, llm=llm)
+
+    # ✅ ใส่ LLMChain ลง StuffDocumentsChain
+    combine_chain = StuffDocumentsChain(
+        llm_chain=llm_chain,
+        document_variable_name="context"
+    )
+
+    # ✅ สร้าง RetrievalQA พร้อม combine chain
+    qa_chain = RetrievalQA(
+        retriever=vectordb.as_retriever(),
+        combine_documents_chain=combine_chain
+    )
+
+    return qa_chain
 
 
 # === Main Streamlit App ===
@@ -70,7 +104,7 @@ def main():
     st.set_page_config(page_title="RAG Chatbot", layout="wide")
     st.title("💬 Chatbot พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562")
 
-    # 👇 เก็บประวัติคำถาม-คำตอบ
+    # เก็บประวัติคำถาม-คำตอบ
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -78,26 +112,32 @@ def main():
     if st.button("🔁 ล้างประวัติการสนทนา"):
         st.session_state.chat_history = []
 
-    with st.spinner("📚 กำลังโหลดเอกสารและเตรียมฐานข้อมูล..."):
+    with st.spinner("📚 กำลังโหลดเอกสารและสร้างฐานข้อมูล..."):
         docs = load_documents()
         chunks = split_documents(docs)
         vectordb = build_vectorstore(chunks)
         qa_chain = create_qa_chain(vectordb)
 
-    # 👇 รับคำถามจากผู้ใช้
+    # รับคำถามจากผู้ใช้
     query = st.text_input("📥 พิมพ์คำถามของคุณ:", placeholder="เช่น ข้อมูลส่วนบุคคลคืออะไร?")
     if query:
         with st.spinner("🧠 คิดคำตอบ..."):
             answer = qa_chain.run(query)
             st.session_state.chat_history.append((query, answer))
 
-    # 👇 แสดงประวัติการสนทนา
+    # แสดงประวัติการสนทนา (จำกัดความกว้าง)
     if st.session_state.chat_history:
         st.markdown("### 🗂️ ประวัติการสนทนา")
-        for i, (q, a) in enumerate(reversed(st.session_state.chat_history), 1):
-            st.markdown(f"**{i}. คำถาม:** {q}")
-            st.markdown(f"👉 **คำตอบ:** {a}")
-            st.markdown("---")
+        with st.container():
+            st.markdown(
+                "<div style='max-width: 800px; margin-left: auto; margin-right: auto;'>",
+                unsafe_allow_html=True
+            )
+            for i, (q, a) in enumerate(reversed(st.session_state.chat_history), 1):
+                st.markdown(f"**{i}. คำถาม:** {q}")
+                st.markdown(f"👉 **คำตอบ:** {a}")
+                st.markdown("---")
+            st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
