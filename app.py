@@ -64,6 +64,7 @@ def create_qa_chain(vectordb):
     chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectordb.as_retriever())
     return chain
 
+
 # === Main Streamlit App ===
 def main():
     st.set_page_config(page_title="RAG Chatbot", layout="wide")
@@ -84,5 +85,20 @@ def main():
         qa_chain = create_qa_chain(vectordb)
 
     # 👇 รับคำถามจากผู้ใช้
-    query = st.text_input("📥 พิมพ์คำถามของคุณ:", placeholder="เช่น โครงสร้าง_
+    query = st.text_input("📥 พิมพ์คำถามของคุณ:", placeholder="เช่น โครงสร้างหน่วยงานเป็นอย่างไร?")
+    if query:
+        with st.spinner("🧠 คิดคำตอบ..."):
+            answer = qa_chain.run(query)
+            st.session_state.chat_history.append((query, answer))
+
+    # 👇 แสดงประวัติการสนทนา
+    if st.session_state.chat_history:
+        st.markdown("### 🗂️ ประวัติการสนทนา")
+        for i, (q, a) in enumerate(reversed(st.session_state.chat_history), 1):
+            st.markdown(f"**{i}. คำถาม:** {q}")
+            st.markdown(f"👉 **คำตอบ:** {a}")
+            st.markdown("---")
+
+if __name__ == "__main__":
+    main()
 
