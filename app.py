@@ -1,9 +1,11 @@
 import os
 import streamlit as st
-from langchain.document_loaders import PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
+from langchain.document_loaders import (
+    PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
+)
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 
@@ -11,7 +13,7 @@ from langchain_groq import ChatGroq
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
 MODEL_NAME = "mixtral-8x7b"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
 
-# === Load documents from docs/ ===
+# === Load documents ===
 def load_documents():
     all_docs = []
     folder_path = "docs"
@@ -39,10 +41,10 @@ def split_documents(docs):
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     return splitter.split_documents(docs)
 
-# === Build vectorstore with HuggingFace Embeddings ===
+# === Build FAISS vectorstore ===
 def build_vectorstore(chunks):
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectordb = Chroma.from_documents(chunks, embedding=embeddings)
+    vectordb = FAISS.from_documents(chunks, embedding=embeddings)
     return vectordb
 
 # === Create RAG chain with Groq ===
@@ -60,7 +62,7 @@ def main():
     st.set_page_config(page_title="RAG Chatbot", layout="wide")
     st.title("💬 RAG Chatbot สำหรับข้อมูลองค์กร")
 
-    with st.spinner("📚 กำลังโหลดเอกสารและสร้างฐานข้อมูล..."):
+    with st.spinner("📚 กำลังโหลดเอกสารและเตรียมฐานข้อมูล..."):
         docs = load_documents()
         chunks = split_documents(docs)
         vectordb = build_vectorstore(chunks)
