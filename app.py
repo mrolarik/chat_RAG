@@ -1,6 +1,5 @@
 import os
 import streamlit as st
-import panel as pn
 from langchain.document_loaders import (
     PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
 )
@@ -9,8 +8,6 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
-
-pn.extension()
 
 # === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
@@ -67,40 +64,40 @@ def create_qa_chain(vectordb):
     chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectordb.as_retriever())
     return chain
 
-# === Load and Prepare Vectorstore ===
-docs = load_documents()
-chunks = split_documents(docs)
-vectordb = build_vectorstore(chunks)
-qa_chain = create_qa_chain(vectordb)
 
-# === Panel UI ===
-chat_history = pn.Column()
-input_box = pn.widgets.TextInput(name="📥 คำถาม", placeholder="พิมพ์คำถาม เช่น หน่วยงานมีกี่ฝ่าย?")
-send_button = pn.widgets.Button(name="ส่งคำถาม", button_type="primary")
-clear_button = pn.widgets.Button(name="🔁 ล้างประวัติ", button_type="warning")
+# === Main Streamlit App ===
+def main():
+    st.set_page_config(page_title="RAG Chatbot", layout="wide")
+    st.title("💬 RAG Chatbot สำหรับข้อมูลองค์กร")
 
-def send_callback(event):
-    question = input_box.value.strip()
-    if question:
-        answer = qa_chain.run(question)
-        chat_history.append(pn.pane.Markdown(f"**🧑‍💼 คุณ:** {question}"))
-        chat_history.append(pn.pane.Markdown(f"**🤖 บอท:** {answer}"))
-        input_box.value = ""
+    # 👇 เก็บประวัติคำถาม-คำตอบ
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-def clear_chat(event):
-    chat_history.clear()
+    # ปุ่มล้างประวัติ
+    if st.button("🔁 ล้างประวัติการสนทนา"):
+        st.session_state.chat_history = []
 
-send_button.on_click(send_callback)
-clear_button.on_click(clear_chat)
+    with st.spinner("📚 กำลังโหลดเอกสารและเตรียมฐานข้อมูล..."):
+        docs = load_documents()
+        chunks = split_documents(docs)
+        vectordb = build_vectorstore(chunks)
+        qa_chain = create_qa_chain(vectordb)
 
-app_layout = pn.Column(
-    "# 💬 RAG Chatbot ด้วย Groq + Panel",
-    pn.Row(input_box, send_button, clear_button),
-    pn.Spacer(height=10),
-    "### 🗂️ ประวัติการสนทนา",
-    chat_history,
-    sizing_mode="stretch_width"
-)
+    # 👇 รับคำถามจากผู้ใช้
+    query = st.text_input("📥 พิมพ์คำถามของคุณ:", placeholder="เช่น โครงสร้างหน่วยงานเป็นอย่างไร?")
+    if query:
+        with st.spinner("🧠 คิดคำตอบ..."):
+            answer = qa_chain.run(query)
+            st.session_state.chat_history.append((query, answer))
 
-app_layout.servable()
+    # 👇 แสดงประวัติการสนทนา
+    if st.session_state.chat_history:
+        st.markdown("### 🗂️ ประวัติการสนทนา")
+        for i, (q, a) in enumerate(reversed(st.session_state.chat_history), 1):
+            st.markdown(f"**{i}. คำถาม:** {q}")
+            st.markdown(f"👉 **คำตอบ:** {a}")
+            st.markdown("---")
 
+if __name__ == "__main__":
+    main()
