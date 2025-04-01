@@ -10,6 +10,9 @@ from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 
+from langchain.chains.question_answering import load_qa_chain
+from langchain.chains import RetrievalQA
+
 # === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
 MODEL_NAME = "llama3-70b-8192"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
@@ -70,13 +73,14 @@ def create_qa_chain(vectordb):
 
     prompt = PromptTemplate(template=prompt_template, input_variables=["question"])
 
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
+    combine_chain = load_qa_chain(llm, chain_type="stuff", prompt=prompt)
+
+    chain = RetrievalQA(
         retriever=vectordb.as_retriever(),
-        chain_type="stuff",
-        chain_type_kwargs={"prompt": prompt}
+        combine_documents_chain=combine_chain
     )
     return chain
+
 
 # === Main Streamlit App ===
 def main():
