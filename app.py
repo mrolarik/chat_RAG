@@ -13,12 +13,11 @@ from langchain_groq import ChatGroq
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
 MODEL_NAME = "llama3-70b-8192"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
 
-"""
-MODEL_NAME = "mixtral-8x7b-32768"   # ✅ ใช้ได้
-MODEL_NAME = "llama3-8b-8192"       # ✅ ใช้ได้
-MODEL_NAME = "llama3-70b-8192"      # ✅ ใช้ได้
-MODEL_NAME = "gemma-7b-it"          # ✅ ใช้ได้
-"""
+
+#MODEL_NAME = "mixtral-8x7b-32768"   # ✅ ใช้ได้
+#MODEL_NAME = "llama3-8b-8192"       # ✅ ใช้ได้
+#MODEL_NAME = "llama3-70b-8192"      # ✅ ใช้ได้
+#MODEL_NAME = "gemma-7b-it"          # ✅ ใช้ได้
 
 # === Load documents ===
 def load_documents():
