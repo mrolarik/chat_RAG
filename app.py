@@ -61,7 +61,7 @@ def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
         groq_api_key="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",
-        model_name=M"llama3-70b-8192"
+        model_name="llama3-70b-8192"
     )
     
     prompt_template = """
