@@ -60,10 +60,10 @@ def build_vectorstore(chunks):
 def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
-        groq_api_key=GROQ_API_KEY,
-        model_name=MODEL_NAME
+        groq_api_key="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",
+        model_name=M"llama3-70b-8192"
     )
-
+    
     prompt_template = """
     คุณเป็นผู้เชี่ยวชาญด้านกฎหมายของประเทศไทย กรุณาตอบคำถามต่อไปนี้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย และเหมาะสมกับประชาชนทั่วไป:
 
