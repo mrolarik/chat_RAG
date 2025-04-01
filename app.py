@@ -108,6 +108,10 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # เตรียมตัวแปรสำหรับกล่องข้อความ
+    if "query" not in st.session_state:
+        st.session_state.query = ""
+    
     # ปุ่มล้างประวัติ
     if st.button("🔁 ล้างประวัติการสนทนา"):
         st.session_state.chat_history = []
