@@ -4,7 +4,8 @@ from langchain.document_loaders import PyPDFLoader, TextLoader, CSVLoader, Unstr
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.chat_models import ChatGroq
+#from langchain.chat_models import ChatGroq
+from langchain_groq import ChatGroq
 from langchain.chains import RetrievalQA
 
 # === SETUP ===
