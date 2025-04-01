@@ -2,17 +2,16 @@ import os
 import streamlit as st
 from langchain.document_loaders import PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
-#from langchain.chat_models import ChatGroq
-from langchain_groq import ChatGroq
 from langchain.chains import RetrievalQA
+from langchain_groq import ChatGroq
 
-# === SETUP ===
+# === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
 MODEL_NAME = "mixtral-8x7b"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
 
-# === Load documents from multiple file types ===
+# === Load documents from docs/ ===
 def load_documents():
     all_docs = []
     folder_path = "docs"
@@ -35,18 +34,18 @@ def load_documents():
 
     return all_docs
 
-# === Split documents ===
+# === Split documents into chunks ===
 def split_documents(docs):
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     return splitter.split_documents(docs)
 
-# === Build Vectorstore ===
+# === Build vectorstore with HuggingFace Embeddings ===
 def build_vectorstore(chunks):
-    embeddings = OpenAIEmbeddings()
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vectordb = Chroma.from_documents(chunks, embedding=embeddings)
     return vectordb
 
-# === RAG Chain using Groq ===
+# === Create RAG chain with Groq ===
 def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
@@ -59,19 +58,20 @@ def create_qa_chain(vectordb):
 # === Streamlit UI ===
 def main():
     st.set_page_config(page_title="RAG Chatbot", layout="wide")
-    st.title("💬 องค์กร Chatbot ด้วย RAG + Groq")
+    st.title("💬 RAG Chatbot สำหรับข้อมูลองค์กร")
 
-    with st.spinner("📚 กำลังโหลดข้อมูล..."):
+    with st.spinner("📚 กำลังโหลดเอกสารและสร้างฐานข้อมูล..."):
         docs = load_documents()
         chunks = split_documents(docs)
         vectordb = build_vectorstore(chunks)
         qa_chain = create_qa_chain(vectordb)
 
-    query = st.text_input("ถามเกี่ยวกับองค์กรของคุณที่นี่:", placeholder="เช่น โครงสร้างองค์กรเป็นอย่างไร?")
+    query = st.text_input("📥 พิมพ์คำถามของคุณ:", placeholder="เช่น หน่วยงานเรามีกี่ฝ่าย?")
     if query:
-        with st.spinner("🧠 กำลังประมวลผล..."):
+        with st.spinner("🧠 คิดคำตอบ..."):
             answer = qa_chain.run(query)
             st.markdown(f"**คำตอบ:** {answer}")
 
 if __name__ == "__main__":
     main()
+
