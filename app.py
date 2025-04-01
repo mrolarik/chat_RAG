@@ -59,11 +59,6 @@ def build_vectorstore(chunks):
     return vectordb
 
 # === Create QA Chain with Thai Prompt ===
-from langchain.chains import RetrievalQA
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.prompts import PromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-
 def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
@@ -71,7 +66,6 @@ def create_qa_chain(vectordb):
         model_name="llama3-70b-8192"
     )
 
-    # 👉 Prompt Template ที่สั่งให้ตอบเป็นภาษาไทย
     prompt_template = """
     คุณเป็นผู้เชี่ยวชาญด้านกฎหมายของประเทศไทย กรุณาตอบคำถามต่อไปนี้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย และเหมาะสมกับประชาชนทั่วไป:
 
@@ -87,11 +81,16 @@ def create_qa_chain(vectordb):
         input_variables=["context", "question"]
     )
 
+    # ✅ สร้าง LLMChain แยกก่อน
+    llm_chain = LLMChain(prompt=prompt, llm=llm)
+
+    # ✅ ใส่ LLMChain ลง StuffDocumentsChain
     combine_chain = StuffDocumentsChain(
-        llm_chain=prompt | llm | StrOutputParser(),
+        llm_chain=llm_chain,
         document_variable_name="context"
     )
 
+    # ✅ สร้าง RetrievalQA พร้อม combine chain
     qa_chain = RetrievalQA(
         retriever=vectordb.as_retriever(),
         combine_documents_chain=combine_chain
