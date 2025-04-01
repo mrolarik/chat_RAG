@@ -10,8 +10,10 @@ from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 
-from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import RetrievalQA
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.prompts import PromptTemplate
+from langchain.schema.output_parser import StrOutputParser
 
 # === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
@@ -57,29 +59,45 @@ def build_vectorstore(chunks):
     return vectordb
 
 # === Create QA Chain with Thai Prompt ===
+from langchain.chains import RetrievalQA
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.prompts import PromptTemplate
+from langchain.schema.output_parser import StrOutputParser
+
 def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
         groq_api_key="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",
         model_name="llama3-70b-8192"
     )
-    
+
+    # 👉 Prompt Template ที่สั่งให้ตอบเป็นภาษาไทย
     prompt_template = """
     คุณเป็นผู้เชี่ยวชาญด้านกฎหมายของประเทศไทย กรุณาตอบคำถามต่อไปนี้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย และเหมาะสมกับประชาชนทั่วไป:
+
+    เอกสารที่เกี่ยวข้อง:
+    {context}
 
     คำถาม: {question}
     คำตอบ:
     """
 
-    prompt = PromptTemplate(template=prompt_template, input_variables=["question"])
+    prompt = PromptTemplate(
+        template=prompt_template,
+        input_variables=["context", "question"]
+    )
 
-    combine_chain = load_qa_chain(llm, chain_type="stuff", prompt=prompt)
+    combine_chain = StuffDocumentsChain(
+        llm_chain=prompt | llm | StrOutputParser(),
+        document_variable_name="context"
+    )
 
-    chain = RetrievalQA(
+    qa_chain = RetrievalQA(
         retriever=vectordb.as_retriever(),
         combine_documents_chain=combine_chain
     )
-    return chain
+
+    return qa_chain
 
 
 # === Main Streamlit App ===
