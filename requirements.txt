@@ -1,0 +1,10 @@
+#pip install streamlit langchain langchain-community groqclient chromadb unstructured pypdf python-docx
+
+streamlit==1.44.0
+langchain>=0.3.22
+langchain-community>=0.3.20
+groq>=0.20.0
+chromadb>=0.6.3
+unstructured>=0.17.2
+pypdf>=5.4.0
+python-docx>=1.1.2
