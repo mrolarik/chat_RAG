@@ -12,6 +12,9 @@ from langchain.chains import RetrievalQA, LLMChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage
+
 
 # === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็นของคุณ
@@ -53,17 +56,29 @@ def create_qa_chain(vectordb, model_name):
         model_name=model_name
     )
 
-    prompt_template = """
+    prompt = ChatPromptTemplate.from_template(
+        """
 คุณเป็นผู้เชี่ยวชาญด้านกฎหมายของประเทศไทย กรุณาตอบคำถามต่อไปนี้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย และเหมาะสมกับประชาชนทั่วไป:
 
 {context}
 
 โปรดสรุปและตอบคำถามด้านบนโดยอ้างอิงจากเนื้อหาที่ให้ไว้เท่านั้น
-"""
-    prompt = PromptTemplate(template=prompt_template, input_variables=["context"])
-    llm_chain = LLMChain(prompt=prompt, llm=llm)
-    combine_chain = StuffDocumentsChain(llm_chain=llm_chain, document_variable_name="context")
-    return RetrievalQA(retriever=vectordb.as_retriever(), combine_documents_chain=combine_chain)
+        """
+    )
+
+    llm_chain = LLMChain(llm=llm, prompt=prompt)
+
+    combine_chain = StuffDocumentsChain(
+        llm_chain=llm_chain,
+        document_variable_name="context"
+    )
+
+    qa_chain = RetrievalQA(
+        retriever=vectordb.as_retriever(),
+        combine_documents_chain=combine_chain
+    )
+
+    return qa_chain
 
 # === Main Streamlit App ===
 def main():
