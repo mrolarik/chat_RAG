@@ -3,9 +3,9 @@ import streamlit as st
 #from langchain.document_loaders import (
 #    PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
 #)
-from langchain_community.document_loaders import {
+from langchain_community.document_loaders import (
     PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
-}
+)
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 #from langchain.embeddings import HuggingFaceEmbeddings
