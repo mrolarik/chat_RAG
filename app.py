@@ -14,7 +14,7 @@ from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 
 # === CONFIG ===
-GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key จริง
+GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็นของคุณ
 DOCS_FOLDER = "docs"
 
 # === Load documents ===
@@ -102,12 +102,16 @@ Chatbot นี้มีวัตถุประสงค์เพื่อทด
         st.session_state.chat_history = []
     if "query" not in st.session_state:
         st.session_state.query = ""
-    if "qa_chain" not in st.session_state:
+    if "vectordb" not in st.session_state:
         with st.spinner("📚 กำลังโหลดเอกสารและสร้างฐานข้อมูล..."):
             docs = load_documents()
             chunks = split_documents(docs)
-            vectordb = build_vectorstore(chunks)
-            st.session_state.qa_chain = create_qa_chain(vectordb, selected_model)
+            st.session_state.vectordb = build_vectorstore(chunks)
+    if "current_model" not in st.session_state:
+        st.session_state.current_model = None
+    if "qa_chain" not in st.session_state or selected_model != st.session_state.current_model:
+        st.session_state.qa_chain = create_qa_chain(st.session_state.vectordb, selected_model)
+        st.session_state.current_model = selected_model
 
     # === Callback ===
     def submit_question():
@@ -148,5 +152,4 @@ Chatbot นี้มีวัตถุประสงค์เพื่อทด
 
 if __name__ == "__main__":
     main()
-
 
