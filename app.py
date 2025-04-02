@@ -165,7 +165,11 @@ def main():
     if query:
         with st.spinner("🧠 คิดคำตอบ..."):
             answer = qa_chain.run(query)
-            st.session_state.chat_history.append((query, answer))
+            st.session_state.chat_history.append({
+                "question": query,
+                "answer": answer,
+                "model": selected_model
+            })
             st.session_state.query = ""  # ล้างกล่องข้อความหลังตอบ
 
     # ปุ่มล้างประวัติ
@@ -180,9 +184,10 @@ def main():
                 "<div style='max-width: 800px; margin-left: auto; margin-right: auto;'>",
                 unsafe_allow_html=True
             )
-            for i, (q, a) in enumerate(reversed(st.session_state.chat_history), 1):
-                st.markdown(f"**{i}. คำถาม:** {q}")
-                st.markdown(f"👉 **คำตอบ:** {a}")
+            for i, item in enumerate(reversed(st.session_state.chat_history), 1):
+                st.markdown(f"**{i}. คำถาม:** {item['question']}")
+                st.markdown(f"👉 **คำตอบ:** {item['answer']}")
+                st.markdown(f"<span style='color: gray; font-size: 0.9em;'>🧠 โมเดลที่ใช้: {item['model']}</span>", unsafe_allow_html=True)
                 st.markdown("---")
             st.markdown("</div>", unsafe_allow_html=True)
 
