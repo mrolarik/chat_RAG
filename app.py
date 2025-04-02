@@ -1,11 +1,17 @@
 import os
 import streamlit as st
-from langchain.document_loaders import (
+#from langchain.document_loaders import (
+#    PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
+#)
+from langchain_community.document_loaders import {
     PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
-)
+}
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
+#from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
+#from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
