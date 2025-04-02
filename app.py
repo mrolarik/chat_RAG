@@ -17,14 +17,13 @@ from langchain.schema.output_parser import StrOutputParser
 
 # === CONFIG ===
 GROQ_API_KEY = "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"  # 🔑 เปลี่ยนเป็น API Key ของคุณ
-MODEL_NAME = "llama3-70b-8192"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
+#MODEL_NAME = "llama3-70b-8192"  # หรือ "llama3-8b-8192" ที่รองรับ Groq
 
 
 #MODEL_NAME = "mixtral-8x7b-32768"   # ✅ ใช้ได้
 #MODEL_NAME = "llama3-8b-8192"       # ✅ ใช้ได้
 #MODEL_NAME = "llama3-70b-8192"      # ✅ ใช้ได้
 #MODEL_NAME = "gemma-7b-it"          # ✅ ใช้ได้
-
 
 # === Load documents ===
 def load_documents():
@@ -59,11 +58,11 @@ def build_vectorstore(chunks):
     return vectordb
 
 # === Create QA Chain with Thai Prompt ===
-def create_qa_chain(vectordb):
+def create_qa_chain(vectordb, model_name):
     llm = ChatGroq(
         temperature=0,
-        groq_api_key="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",
-        model_name="llama3-70b-8192"
+        groq_api_key=GROQ_API_KEY,
+        model_name=model_name
     )
 
     prompt_template = """
@@ -81,16 +80,13 @@ def create_qa_chain(vectordb):
         input_variables=["context", "question"]
     )
 
-    # ✅ สร้าง LLMChain แยกก่อน
     llm_chain = LLMChain(prompt=prompt, llm=llm)
 
-    # ✅ ใส่ LLMChain ลง StuffDocumentsChain
     combine_chain = StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name="context"
     )
 
-    # ✅ สร้าง RetrievalQA พร้อม combine chain
     qa_chain = RetrievalQA(
         retriever=vectordb.as_retriever(),
         combine_documents_chain=combine_chain
@@ -108,16 +104,27 @@ def main():
     st.sidebar.title("💬 Chatbot พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562")
     st.sidebar.markdown(
         """
-        Chatbot นี้มีวัตถุประสงค์เพื่อทดสอบการทำงานของ chatbot ร่วมกับ LLM และ RAG 
-        เพื่อถามตอบคำถามเกี่ยวกับ **พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562** 
-        และเนื้อหาสาระต่าง ๆ ที่เกี่ยวข้อง โดยเบื้องต้นใช้เนื้อหาที่รวบรวมมาจากอินเทอร์เน็ต
+        Chatbot นี้มีวัตถุประสงค์เพื่อทดสอบการทำงานของ chatbot ร่วมกับ LLM และ RAG  
+        เพื่อถามตอบคำถามเกี่ยวกับ  
+        **พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562**  
+        และเนื้อหาสาระต่าง ๆ ที่เกี่ยวข้อง  
+        โดยเบื้องต้นใช้เนื้อหาที่รวบรวมมาจากอินเทอร์เน็ต
         """,
         unsafe_allow_html=False
     )
 
+    # Dropdown เลือกโมเดล
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚙️ เลือกโมเดล LLM")
+    selected_model = st.sidebar.selectbox(
+        "🧠 ใช้โมเดลใดในการตอบคำถาม?",
+        options=["llama3-70b-8192", "gemma-7b-it", "mixtral-8x7b-32768"],
+        index=0
+    )
+
+    # ตัวอย่างคำถาม-คำตอบ
     st.sidebar.markdown("---")
     st.sidebar.subheader("🧪 ตัวอย่างคำถาม-คำตอบ")
-    
     st.sidebar.markdown("""
     <div style='background-color: #f1f3f6; padding: 10px; border-radius: 10px; margin-bottom: 10px;'>
     <b>คำถาม:</b><br>
@@ -138,24 +145,34 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    if "query" not in st.session_state:
+        st.session_state.query = ""
+
+    # โหลดข้อมูลและสร้าง QA chain
     with st.spinner("📚 กำลังโหลดเอกสารและสร้างฐานข้อมูล..."):
         docs = load_documents()
         chunks = split_documents(docs)
         vectordb = build_vectorstore(chunks)
-        qa_chain = create_qa_chain(vectordb)
+        qa_chain = create_qa_chain(vectordb, selected_model)
 
-    # รับคำถามจากผู้ใช้
-    query = st.text_input("📥 พิมพ์คำถามของคุณ:", placeholder="เช่น ข้อมูลส่วนบุคคลคืออะไร?")
+    # กล่องรับคำถาม
+    query = st.text_input(
+        "📥 พิมพ์คำถามของคุณ:",
+        placeholder="เช่น ข้อมูลส่วนบุคคลคืออะไร?",
+        key="query"
+    )
+
     if query:
         with st.spinner("🧠 คิดคำตอบ..."):
             answer = qa_chain.run(query)
             st.session_state.chat_history.append((query, answer))
+            st.session_state.query = ""  # ล้างกล่องข้อความหลังตอบ
 
     # ปุ่มล้างประวัติ
     if st.button("🔁 ล้างประวัติการสนทนา"):
         st.session_state.chat_history = []
-        
-    # แสดงประวัติการสนทนา (จำกัดความกว้าง)
+
+    # แสดงประวัติการสนทนา
     if st.session_state.chat_history:
         st.markdown("### 🗂️ ประวัติการสนทนา")
         with st.container():
