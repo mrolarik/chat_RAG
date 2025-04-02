@@ -68,16 +68,14 @@ def create_qa_chain(vectordb, model_name):
     prompt_template = """
     คุณเป็นผู้เชี่ยวชาญด้านกฎหมายของประเทศไทย กรุณาตอบคำถามต่อไปนี้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย และเหมาะสมกับประชาชนทั่วไป:
 
-    เอกสารที่เกี่ยวข้อง:
     {context}
 
-    คำถาม: {question}
-    คำตอบ:
+    โปรดสรุปและตอบคำถามด้านบนโดยอ้างอิงจากเนื้อหาที่ให้ไว้เท่านั้น
     """
 
     prompt = PromptTemplate(
         template=prompt_template,
-        input_variables=["context", "question"]
+        input_variables=["context"]
     )
 
     llm_chain = LLMChain(prompt=prompt, llm=llm)
@@ -93,6 +91,7 @@ def create_qa_chain(vectordb, model_name):
     )
 
     return qa_chain
+
 
 
 # === Main Streamlit App ===
