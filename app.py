@@ -1,21 +1,15 @@
 import os
 import streamlit as st
-#from langchain.document_loaders import (
-#    PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
-#)
 from langchain_community.document_loaders import (
     PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
 )
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-#from langchain.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-#from langchain.vectorstores import FAISS
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
-
 from langchain.chains import RetrievalQA, LLMChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.prompts import PromptTemplate
@@ -68,8 +62,8 @@ def build_vectorstore(chunks):
 def create_qa_chain(vectordb):
     llm = ChatGroq(
         temperature=0,
-        groq_api_key="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",
-        model_name="llama3-70b-8192"
+        groq_api_key=GROQ_API_KEY,
+        model_name=MODEL_NAME
     )
 
     prompt_template = """
